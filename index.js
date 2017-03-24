@@ -1,17 +1,22 @@
-var through = require('through2');
-var speedometer = require('speedometer');
+const through = require('through2');
+const speedometer = require('speedometer');
+const _ = require('lodash');
+const SMOOTHING_FACTOR = 0.005;
+const SKIP_INITIAL_SPEED = 3;
 
 module.exports = function(options, onprogress) {
 	if (typeof options === 'function') return module.exports(null, options);
 	options = options || {};
 
+	const speedometerSeconds = options.speed || 5;
 	var length = options.length || 0;
 	var time = options.time || 0;
 	var drain = options.drain || false;
 	var transferred = options.transferred || 0;
 	var emitInterval = null;
+	var speedCollection = [];
 	var delta = 0;
-	var speed = speedometer(options.speed || 5);
+	var speed = speedometer(speedometerSeconds);
 	var startTime = Date.now();
 
 	var update = {
@@ -23,11 +28,27 @@ module.exports = function(options, onprogress) {
 		runtime: 0
 	};
 
+	var calcAvgSpeed = function() {
+		// set avgSpeed as the average value of first x set of speeds.
+		if (speedCollection.length <= SKIP_INITIAL_SPEED) {
+			speedCollection.push(update.speed);
+			update.avgSpeed = _.round(_.sum(speedCollection) / speedCollection.length);
+			update.eta = -1;
+			return;
+		}
+
+		const current = SMOOTHING_FACTOR * update.speed;
+		const average = (1 - SMOOTHING_FACTOR) * update.avgSpeed;
+		update.avgSpeed = current + average;
+		update.eta = _.round(update.remaining / update.avgSpeed);
+		return;
+	};
+
 	var emit = function(ended) {
 		update.delta = delta;
 		update.percentage = ended ? 100 : (length ? transferred/length*100 : 0);
 		update.speed = speed(delta);
-		update.eta = Math.round(update.remaining / update.speed);
+		calcAvgSpeed();
 		update.runtime = parseInt((Date.now() - startTime)/1000);
 
 		delta = 0;
@@ -93,7 +114,7 @@ module.exports = function(options, onprogress) {
 
 	tr.progress = function() {
 		update.speed = speed(0);
-		update.eta = Math.round(update.remaining / update.speed);
+		calcAvgSpeed();
 
 		return update;
 	};

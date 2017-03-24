@@ -20,8 +20,9 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "through2": "~0.2.3",
-    "speedometer": "~0.1.2"
+    "lodash": "^4.17.4",
+    "speedometer": "~0.1.2",
+    "through2": "~0.2.3"
   },
   "devDependencies": {
     "request": "~2.29.0",
