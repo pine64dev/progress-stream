@@ -6,7 +6,9 @@ var numeral = require('numeral');
 
 var str = progress({
 	drain: true,
-	time: 100
+	time: 1000,
+	speed: 5,
+	length: 10485760
 }, function(progress) {
 	log('Running: '+numeral(progress.runtime).format('00:00:00')+' ('+numeral(progress.transferred).format('0 b')+')\n'+
 		'Left:    '+numeral(progress.eta).format('00:00:00')+' ('+numeral(progress.remaining).format('0 b')+')\n'+
