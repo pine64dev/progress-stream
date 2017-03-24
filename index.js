@@ -9,7 +9,7 @@ module.exports = function(options, onprogress) {
 	var time = options.time || 0;
 	var drain = options.drain || false;
 	var transferred = options.transferred || 0;
-	var nextUpdate = Date.now()+time;
+	var emitInterval = null;
 	var delta = 0;
 	var speed = speedometer(options.speed || 5000);
 	var startTime = Date.now();
@@ -29,7 +29,6 @@ module.exports = function(options, onprogress) {
 		update.speed = speed(delta);
 		update.eta = Math.round(update.remaining / update.speed);
 		update.runtime = parseInt((Date.now() - startTime)/1000);
-		nextUpdate = Date.now()+time;
 
 		delta = 0;
 
@@ -42,10 +41,14 @@ module.exports = function(options, onprogress) {
 		update.transferred = transferred;
 		update.remaining = length >= transferred ? length - transferred : 0;
 
-		if (Date.now() >= nextUpdate) emit(false);
+		if (emitInterval === null) {
+			emit(false);
+			emitInterval = setInterval(emit, time, false);
+		}
 		callback(null, chunk);
 	};
 	var end = function(callback) {
+		clearInterval(emitInterval);
 		emit(true);
 		callback();
 	};
