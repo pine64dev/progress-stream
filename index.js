@@ -41,7 +41,7 @@ module.exports = function(options, onprogress) {
 		const average = (1 - SMOOTHING_FACTOR) * update.avgSpeed;
 		update.avgSpeed = current + average;
 		const MIN_ETA = 1;
-		const eta = _.round(update.remaining / update.avgSpeed);
+		let eta = _.round(update.remaining / update.avgSpeed);
       	eta = eta < MIN_ETA ? MIN_ETA : eta;
 		update.eta = eta;
 		return;
