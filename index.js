@@ -40,15 +40,28 @@ module.exports = function(options, onprogress) {
 		const current = SMOOTHING_FACTOR * update.speed;
 		const average = (1 - SMOOTHING_FACTOR) * update.avgSpeed;
 		update.avgSpeed = current + average;
-		update.eta = _.round(update.remaining / update.avgSpeed);
+		const MIN_ETA = 1;
+		const eta = _.round(update.remaining / update.avgSpeed);
+      	eta = eta < MIN_ETA ? MIN_ETA : eta;
+		update.eta = eta;
 		return;
 	};
 
 	var emit = function(ended) {
 		update.delta = delta;
-		update.percentage = ended ? 100 : (length ? transferred/length*100 : 0);
-		update.speed = speed(delta);
-		calcAvgSpeed();
+		if (ended) {
+			update.percentage = 100;
+			update.speed = 0;
+			update.avgSpeed = 0;
+			update.eta = 0;
+		} else {
+			const MIN_PERCENTAGE = 0;
+			const MAX_PERCENTAGE = 99;
+			const currentPercentage = length ? _.round(transferred / length * 100) : MIN_PERCENTAGE;
+			update.percentage = _.clamp(currentPercentage, MIN_PERCENTAGE, MAX_PERCENTAGE);
+			update.speed = speed(delta);
+			calcAvgSpeed();
+		}
 		update.runtime = parseInt((Date.now() - startTime)/1000);
 
 		delta = 0;
